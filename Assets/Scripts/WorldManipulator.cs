@@ -46,6 +46,9 @@ public class WorldManipulator : MonoBehaviour
     }
     public Vector3 initialLeftPos = Vector3.zero;
     public Vector3 initialRightPos = Vector3.zero;
+    public Vector3 initialMidpoint = Vector3.zero;
+    public float initialDist = 0f;
+
     public Vector3 initialOrigin = Vector3.zero;
     public float initialScale = 1.0f;
 
@@ -58,57 +61,60 @@ public class WorldManipulator : MonoBehaviour
         var prevState = cameraManipState;
         cameraManipState = getCameraManipState();
 
+        bool leftPressed = cameraManipButton.GetState(SteamVR_Input_Sources.LeftHand);
+        bool rightPressed = cameraManipButton.GetState(SteamVR_Input_Sources.RightHand);
+
         var leftPos = leftController.transform.position;
         var rightPos = rightController.transform.position;
+        var midpoint = leftPressed && rightPressed ? (leftPos + rightPos) / 2f
+            : leftPressed ? leftPos
+            : rightPressed ? rightPos
+            : Vector3.zero;
+
+        var dist = leftPressed && rightPressed ? Vector3.Distance(leftPos, rightPos)
+            : 1f;
 
         if (cameraManipState != prevState) {
             Debug.Log("switching from " + prevState + " to " + cameraManipState);
             initialLeftPos = leftPos;
             initialRightPos = rightPos;
             initialScale  = worldScale;
-            initialOrigin = transform.position / initialScale;
+            initialOrigin = transform.position;
+
+            initialMidpoint = midpoint;
+            initialDist = dist;
+
         } else if (cameraManipState != CameraManipState.None) {
             Debug.Log("updating with " + cameraManipState);
-            var leftDelta = leftPos - initialLeftPos;
-            var rightDelta = rightPos - initialRightPos;
-            var relDelta = (leftPos - rightPos).magnitude / (initialLeftPos - initialRightPos).magnitude;
 
-            debugLeft = leftPos;
-            debugRight = rightPos;
+            var offset = midpoint - initialMidpoint;
+            var scale = initialScale * dist / initialDist;
+            scale = Mathf.Clamp(scale, minScale, maxScale);
 
-            debugManipMovement = getManipMovement(leftDelta, rightDelta);
-            var newOrigin = initialOrigin + getManipMovement(leftDelta, rightDelta);
-            worldOrigin.x = Mathf.Clamp(newOrigin.x, -Mathf.Abs(worldBounds.x), Mathf.Abs(worldBounds.x));
-            worldOrigin.y = Mathf.Clamp(newOrigin.y, -Mathf.Abs(worldBounds.y), Mathf.Abs(worldBounds.y));
-            worldOrigin.x = Mathf.Clamp(newOrigin.z, -Mathf.Abs(worldBounds.z), Mathf.Abs(worldBounds.z));
+            var newOrigin = (initialOrigin / initialScale + offset) * scale;
+            worldScale = scale;
 
-            debugRelDelta = relDelta;
-            debugScaleFactorChange = getScaleFactorChange(leftDelta, rightDelta, relDelta);
-            var newScale = initialScale * getScaleFactorChange(leftDelta, rightDelta, relDelta);
-            worldScale = Mathf.Clamp(newScale, minScale, maxScale);
-
-            var currentScale = transform.localScale.magnitude;
-            if (currentScale != newScale)
+            if (scale != worldScale)
             {
-                transform.localScale = Vector3.one * newScale;
+                worldScale = scale;
+                transform.localScale = Vector3.one / worldScale;
             }
-            var currentPos = transform.position;
-            var newPos = newOrigin;
-            if (currentPos != newPos)
+            if (newOrigin != worldOrigin)
             {
-                transform.position = newPos;
+                worldOrigin = newOrigin;
+                transform.position = worldOrigin;
             }
         }
     }
     public float getMovementSpeed () { return 1.0f; }
 
-    public Vector3 getManipMovement (Vector3 leftDelta, Vector3 rightDelta) {
+    public Vector3 getManipMovement (Vector3 leftPos, Vector3 rightPos) {
         switch (cameraManipState)
         {
             case CameraManipState.None: return Vector3.zero;
-            case CameraManipState.TranslateFromLeft: return leftDelta * worldScale * getMovementSpeed();
-            case CameraManipState.TranslateFromRight: return rightDelta * worldScale * getMovementSpeed();
-            case CameraManipState.TransformWithBothControllers: return (leftDelta + rightDelta) * worldScale * getMovementSpeed();
+            case CameraManipState.TranslateFromLeft: return leftPos * getMovementSpeed();
+            case CameraManipState.TranslateFromRight: return rightPos * getMovementSpeed();
+            case CameraManipState.TransformWithBothControllers: return (leftPos + rightPos) / 2.0f * getMovementSpeed();
         }
         throw new System.Exception("unhandled state " + cameraManipState);
     }
