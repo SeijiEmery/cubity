@@ -1,0 +1,16 @@
+{
+  "source": "Unity",
+  "applications": [
+    {
+      "app_key": "application.generated.unity.viztest.exe",
+      "launch_type": "url",
+      "url": "steam://launch/",
+      "action_manifest_path": "C:\\Users\\Seiji\\Documents\\GitHub\\viztest\\viztest\\actions.json",
+      "strings": {
+        "en_us": {
+          "name": "viztest [Testing]"
+        }
+      }
+    }
+  ]
+}
