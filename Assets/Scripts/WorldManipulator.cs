@@ -51,6 +51,7 @@ public class WorldManipulator : MonoBehaviour
 
     public Vector3 initialOrigin = Vector3.zero;
     public float initialScale = 1.0f;
+    public Quaternion initialRotation = Quaternion.identity;
 
     public Vector3 debugManipMovement = Vector3.zero;
     public float debugRelDelta = 1.0f;
@@ -78,8 +79,9 @@ public class WorldManipulator : MonoBehaviour
             Debug.Log("switching from " + prevState + " to " + cameraManipState);
             initialLeftPos = leftPos;
             initialRightPos = rightPos;
-            initialScale  = worldScale;
+            initialScale = worldScale;
             initialOrigin = transform.position;
+            initialRotation = transform.rotation;
 
             initialMidpoint = midpoint;
             initialDist = dist;
@@ -104,8 +106,33 @@ public class WorldManipulator : MonoBehaviour
                 worldOrigin = newOrigin;
                 transform.position = worldOrigin;
             }
+
+            // apply rotation iff two controllers active
+            if (cameraManipState == CameraManipState.TransformWithBothControllers)
+            {
+                var delta = leftPos - rightPos;
+                var initialDelta = initialLeftPos - initialRightPos;
+                var newRotation = getRotation(delta, initialDelta);
+                transform.rotation = newRotation;
+            }
         }
     }
+
+    public Quaternion getRotation (Vector3 delta, Vector3 initialDelta)
+    {
+        switch (cameraRotationMode)
+        {
+            case CameraRotationConstraints.None: return initialRotation;
+            case CameraRotationConstraints.RotateY: return initialRotation * Quaternion.FromToRotation(
+                new Vector3(initialDelta.x, 0.0f, initialDelta.z).normalized,
+                new Vector3(delta.x, 0.0f, delta.z).normalized);
+            case CameraRotationConstraints.FullRotation: return initialRotation * Quaternion.FromToRotation(
+                initialDelta, delta);
+        }
+        throw new System.Exception("unhandled rotation mode " + cameraRotationMode);
+    }
+
+
     public float getMovementSpeed () { return 1.0f; }
 
     public Vector3 getManipMovement (Vector3 leftPos, Vector3 rightPos) {

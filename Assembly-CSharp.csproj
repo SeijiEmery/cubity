@@ -63,7 +63,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\WorldManipulator.cs" />
-    <Compile Include="Assets\Scripts\WorldTransformManip.cs" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>C:/Users/Seiji/Documents/GitHub/viztest/viztest/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>
