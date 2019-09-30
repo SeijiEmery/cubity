@@ -5,6 +5,9 @@ using Valve.VR;
 
 public class WorldManipulator : MonoBehaviour
 {
+    public float moveSpeed = 10.0f;
+    public float scaleSpeed = 1.0f;
+
     // public SteamVR_TrackedObject leftController;
     // public SteamVR_TrackedObject rightController;
     public Transform leftController;
@@ -90,10 +93,10 @@ public class WorldManipulator : MonoBehaviour
             Debug.Log("updating with " + cameraManipState);
 
             var offset = midpoint - initialMidpoint;
-            var scale = initialScale * dist / initialDist;
+            var scale = initialScale * dist / initialDist * scaleSpeed;
             scale = Mathf.Clamp(scale, minScale, maxScale);
 
-            var newOrigin = (initialOrigin / initialScale + offset) * scale;
+            var newOrigin = (initialOrigin / initialScale + offset * moveSpeed) * scale;
             worldScale = scale;
 
             if (scale != worldScale)
